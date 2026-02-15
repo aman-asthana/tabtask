@@ -38,6 +38,7 @@
         <version>${hibernate.version}</version>
       </dependency>
 
+
       <!-- MySQL Connector -->
       <dependency>
         <groupId>mysql</groupId>

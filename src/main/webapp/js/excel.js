@@ -42,11 +42,17 @@ var excel = {
                             form.submit({
                                 url: 'api/excel/upload',
                                 waitMsg: 'Uploading file...',
-                                success: function() {
-                                    Ext.toast('File Uploaded Successfully', 'success');
+                                success: function(form, action) {
+                                    var msg = action.result && action.result.message ? action.result.message : 'File Uploaded Successfully';
+                                    Ext.toast(msg, 'Success');
+                                    // Refresh prefix grid if exists
+                                    if (typeof prefixStore !== 'undefined') {
+                                        prefixStore.load();
+                                    }
                                 },
                                 failure: function(form, action){
-                                    Ext.Msg.alert('Error', action.response.responseText)
+                                    var msg = action.result && action.result.message ? action.result.message : 'Upload failed';
+                                    Ext.Msg.alert('Error', msg);
                                 }
                             })
                         }

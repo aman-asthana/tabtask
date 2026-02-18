@@ -67,15 +67,32 @@ public class ExcelService {
             Row row = sheet.getRow(i);
             if (row != null && row.getCell(0) != null && row.getCell(1) != null) {
                 Prefix p = new Prefix();
-                p.setPrefix(row.getCell(0).getStringCellValue());
-                p.setName(row.getCell(1).getStringCellValue());
-                p.setGender(row.getCell(2) != null ? row.getCell(2).getStringCellValue() : "");
-                p.setRelation(row.getCell(3) != null ? row.getCell(3).getStringCellValue() : "");
+                p.setPrefix(getCellValue(row.getCell(0)));
+                p.setName(getCellValue(row.getCell(1)));
+                p.setGender(getCellValue(row.getCell(2)));
+                p.setRelation(getCellValue(row.getCell(3)));
                 dao.save(p);
                 count++;
             }
         }
         workbook.close();
         return count + " records uploaded successfully";
+    }
+
+    // Helper method to read cell value safely
+    private String getCellValue(Cell cell) {
+        if (cell == null) {
+            return "";
+        }
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue();
+            case NUMERIC:
+                return String.valueOf((int) cell.getNumericCellValue());
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            default:
+                return "";
+        }
     }
 }

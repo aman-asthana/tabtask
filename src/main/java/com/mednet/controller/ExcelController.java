@@ -7,6 +7,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/excel")
@@ -27,8 +29,17 @@ public class ExcelController {
     }
 
     @PostMapping("/upload")
-    public String uploadExcel(@RequestParam("file") MultipartFile file) throws IOException {
-        return excelService.uploadExcel(file.getInputStream());
+    public Map<String, Object> uploadExcel(@RequestParam("file") MultipartFile file) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String result = excelService.uploadExcel(file.getInputStream());
+            response.put("success", true);
+            response.put("message", result);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Upload failed: " + e.getMessage());
+        }
+        return response;
     }
 }
 

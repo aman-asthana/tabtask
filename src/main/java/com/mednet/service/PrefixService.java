@@ -6,21 +6,20 @@ import com.mednet.dao.PrefixDAO;
 import com.mednet.model.Prefix;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-@Service
+@Service("prefixService")
+@Transactional
 public class PrefixService {
 
-    private final PrefixDAO dao;
+    @Autowired
+    public PrefixDAO dao;
 
     @Autowired
     public PrefixService(PrefixDAO dao) {
         this.dao = dao;
     }
 
-    // Default constructor for DWR compatibility
-    public PrefixService() {
-        this.dao = new PrefixDAO();
-    }
 
     public void addPrefix(String prefix, String name, String gender, String relation) {
         Prefix p = new Prefix();
@@ -48,4 +47,6 @@ public class PrefixService {
         p.setRelation(relation);
         dao.update(p);
     }
+
+
 }

@@ -10,7 +10,8 @@ Ext.onReady(function() {
             prefix,
             excel,
             webservice,
-            pdf
+            pdf,
+            cronJob
         ]
     })
 })

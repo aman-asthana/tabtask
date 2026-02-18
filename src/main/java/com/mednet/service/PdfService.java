@@ -1,84 +1,84 @@
 package com.mednet.service;
 
-import com.itextpdf.text.*;
-import com.itextpdf.text.pdf.PdfPCell;
-import com.itextpdf.text.pdf.PdfPTable;
-import com.itextpdf.text.pdf.PdfWriter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mednet.dao.PrefixDAO;
 import com.mednet.model.Prefix;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 public class PdfService {
 
     private final PrefixDAO dao;
+    private final ObjectMapper objectMapper;
+
+    private static final String PUPPETEER_URL = "http://localhost:3000/pdf";
 
     @Autowired
-    public PdfService(PrefixDAO dao) {
+    public PdfService(PrefixDAO dao, ObjectMapper objectMapper) {
         this.dao = dao;
+        this.objectMapper = objectMapper;
     }
 
-    public PdfService() {
-        this.dao = new PrefixDAO();
-    }
+    public void exportPdf(HttpServletResponse response) throws IOException {
 
-    public void exportPdf(HttpServletResponse response) throws IOException, DocumentException {
         response.setContentType("application/pdf");
-        response.setHeader("Content-Disposition", "attachment; filename=prefix.pdf");
+        response.setHeader(
+                "Content-Disposition",
+                "attachment; filename=prefix-report.pdf"
+        );
 
-        Document document = new Document(PageSize.A4);
-        PdfWriter.getInstance(document, response.getOutputStream());
-        document.open();
+        // DB call (safe now)
+        List<Prefix> prefixList = dao.getAll();
 
-        // Title
-        Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, BaseColor.DARK_GRAY);
-        Paragraph title = new Paragraph("Prefix Data Report", titleFont);
-        title.setAlignment(Element.ALIGN_CENTER);
-        title.setSpacingAfter(20);
-        document.add(title);
+        String jsonData = objectMapper.writeValueAsString(prefixList);
+        byte[] pdfBytes = callPuppeteerServer(jsonData);
 
-        // Table
-        PdfPTable table = new PdfPTable(5);
-        table.setWidthPercentage(100);
+        response.setContentLength(pdfBytes.length);
+        try (OutputStream out = response.getOutputStream()) {
+            out.write(pdfBytes);
+        }
+    }
 
-        // Header
-        Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, BaseColor.WHITE);
-        String[] headers = {"ID", "Prefix", "Name", "Gender", "Prefix Of"};
-        for (String h : headers) {
-            PdfPCell cell = new PdfPCell(new Phrase(h, headerFont));
-            cell.setBackgroundColor(BaseColor.DARK_GRAY);
-            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-            cell.setPadding(8);
-            table.addCell(cell);
+    private byte[] callPuppeteerServer(String jsonData) throws IOException {
+        URL url = new URL(PUPPETEER_URL);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setDoOutput(true);
+        connection.setConnectTimeout(30000);
+        connection.setReadTimeout(30000);
+
+        try (OutputStream os = connection.getOutputStream()) {
+            os.write(jsonData.getBytes(StandardCharsets.UTF_8));
         }
 
-        // Data
-        Font dataFont = FontFactory.getFont(FontFactory.HELVETICA, 10);
-        List<Prefix> list = dao.getAll();
-        System.out.println("PDF Export: Found " + list.size() + " records");
+        if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+            throw new IOException("Puppeteer server error: " + connection.getResponseCode());
+        }
 
-        if (list.isEmpty()) {
-            // Show message if no data
-            Paragraph noData = new Paragraph("No records found in database.", dataFont);
-            noData.setAlignment(Element.ALIGN_CENTER);
-            document.add(noData);
-        } else {
-            for (Prefix p : list) {
-                System.out.println("Adding to PDF: " + p.getName());
-                table.addCell(new PdfPCell(new Phrase(String.valueOf(p.getId()), dataFont)));
-                table.addCell(new PdfPCell(new Phrase(p.getPrefix() != null ? p.getPrefix() : "", dataFont)));
-                table.addCell(new PdfPCell(new Phrase(p.getName() != null ? p.getName() : "", dataFont)));
-                table.addCell(new PdfPCell(new Phrase(p.getGender() != null ? p.getGender() : "", dataFont)));
-                table.addCell(new PdfPCell(new Phrase(p.getRelation() != null ? p.getRelation() : "", dataFont)));
+        try (InputStream is = connection.getInputStream();
+             ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+
+            byte[] data = new byte[4096];
+            int n;
+            while ((n = is.read(data)) != -1) {
+                buffer.write(data, 0, n);
             }
-            document.add(table);
+            return buffer.toByteArray();
+        } finally {
+            connection.disconnect();
         }
-        document.close();
     }
 }
 

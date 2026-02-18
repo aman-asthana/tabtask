@@ -4,15 +4,13 @@
 
 <dwr>
     <allow>
-        <create creator="new" javascript="PrefixService">
-            <param name="class" value="com.mednet.service.PrefixService"/>
+        <create creator="spring" javascript="PrefixService">
+            <param name="beanName" value="prefixService"/>
         </create>
 
         <convert converter="bean" match="com.mednet.model.Prefix"/>
         <convert converter="exception" match="java.lang.Exception"/>
         <convert converter="exception" match="java.lang.RuntimeException"/>
         <convert converter="exception" match="java.lang.Throwable"/>
-
     </allow>
-
 </dwr>

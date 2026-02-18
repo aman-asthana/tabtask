@@ -6,8 +6,8 @@ var popup = {
     items: [
         {
             xtype: 'button',
-            text: 'Open Patient Popup',
-            width: 220,
+            text: 'Popup',
+            width: 150,
 
             handler: function () {
 

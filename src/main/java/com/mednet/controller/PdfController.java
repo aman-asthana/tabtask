@@ -1,6 +1,5 @@
 package com.mednet.controller;
 
-import com.itextpdf.text.DocumentException;
 import com.mednet.service.PdfService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +19,7 @@ public class PdfController {
     }
 
     @GetMapping("/export")
-    public void exportPdf(HttpServletResponse response) throws IOException, DocumentException {
+    public void exportPdf(HttpServletResponse response) throws IOException {
         pdfService.exportPdf(response);
     }
 }

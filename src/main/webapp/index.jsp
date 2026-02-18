@@ -17,6 +17,7 @@
     <script src="js/excel.js"></script>
     <script src="js/webservice.js"></script>
     <script src="js/pdf.js"></script>
+    <script src="js/cronJob.js"></script>
     <script src="js/main.js"></script>
 
 

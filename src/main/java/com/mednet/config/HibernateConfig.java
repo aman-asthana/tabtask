@@ -1,61 +1,51 @@
 package com.mednet.config;
 
-import com.mednet.model.Prefix;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Environment;
-import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.service.ServiceRegistry;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.orm.hibernate5.HibernateTransactionManager;
+import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+import javax.sql.DataSource;
 import java.util.Properties;
 
 @Configuration
+@EnableTransactionManagement
+@ComponentScan("com.mednet")
 public class HibernateConfig {
 
-    private static SessionFactory sessionFactory;
-
     @Bean
-    public SessionFactory sessionFactory() {
-        if (sessionFactory == null) {
-            try {
-                org.hibernate.cfg.Configuration configuration = new org.hibernate.cfg.Configuration();
-
-                Properties settings = new Properties();
-                settings.put(Environment.DRIVER, "com.mysql.cj.jdbc.Driver");
-                settings.put(Environment.URL, "jdbc:mysql://localhost:3306/mednet_task");
-                settings.put(Environment.USER, "root");
-                settings.put(Environment.PASS, "amaN@123");
-                settings.put(Environment.DIALECT, "org.hibernate.dialect.MySQL8Dialect");
-                settings.put(Environment.HBM2DDL_AUTO, "update");
-                settings.put(Environment.SHOW_SQL, "true");
-                settings.put(Environment.CURRENT_SESSION_CONTEXT_CLASS, "thread");
-                settings.put(Environment.POOL_SIZE, "10");
-
-                configuration.setProperties(settings);
-                configuration.addAnnotatedClass(Prefix.class);
-
-                ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
-                        .applySettings(configuration.getProperties())
-                        .build();
-
-                sessionFactory = configuration.buildSessionFactory(serviceRegistry);
-                System.out.println("Hibernate SessionFactory created successfully!");
-
-            } catch (Exception e) {
-                System.err.println("SessionFactory creation failed: " + e.getMessage());
-                e.printStackTrace();
-                throw new RuntimeException("Failed to create SessionFactory", e);
-            }
-        }
-        return sessionFactory;
+    public DataSource dataSource() {
+        DriverManagerDataSource ds = new DriverManagerDataSource();
+        ds.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        ds.setUrl("jdbc:mysql://localhost:3306/mednet_task");
+        ds.setUsername("root");
+        ds.setPassword("amaN@123");
+        return ds;
     }
 
+    @Bean
+    public LocalSessionFactoryBean sessionFactory(DataSource dataSource) {
 
-    public static SessionFactory getSessionFactory() {
-        if (sessionFactory == null) {
-            new HibernateConfig().sessionFactory();
-        }
-        return sessionFactory;
+        LocalSessionFactoryBean factory = new LocalSessionFactoryBean();
+        factory.setDataSource(dataSource);
+        factory.setPackagesToScan("com.mednet.model");
+
+        Properties props = new Properties();
+        props.put(Environment.DIALECT, "org.hibernate.dialect.MySQL8Dialect");
+        props.put(Environment.SHOW_SQL, "true");
+        props.put(Environment.HBM2DDL_AUTO, "update");
+
+        factory.setHibernateProperties(props);
+        return factory;
+    }
+
+    @Bean
+    public HibernateTransactionManager transactionManager(SessionFactory sf) {
+        return new HibernateTransactionManager(sf);
     }
 }

@@ -1,84 +1,49 @@
 package com.mednet.dao;
 
-import com.mednet.config.HibernateConfig;
+
 import com.mednet.model.Prefix;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Repository
 public class PrefixDAO {
 
-    private SessionFactory getFactory() {
-        return HibernateConfig.getSessionFactory();
-    }
+    @Autowired
+    private SessionFactory sessionFactory;
 
+    @Transactional
     public void save(Prefix prefix) {
-        Session session = getFactory().openSession();
-        Transaction tx = null;
-        try {
-            tx = session.beginTransaction();
-            session.save(prefix);
-            tx.commit();
-        } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            throw new RuntimeException("Failed to save: " + e.getMessage(), e);
-        } finally {
-            session.close();
-        }
+        sessionFactory.getCurrentSession().save(prefix);
     }
 
+    @Transactional(readOnly = true)
     public List<Prefix> getAll() {
-        Session session = getFactory().openSession();
-        try {
-            return session.createQuery("from Prefix", Prefix.class).list();
-        } finally {
-            session.close();
-        }
+        return sessionFactory
+                .getCurrentSession()
+                .createQuery("from Prefix", Prefix.class)
+                .list();
     }
 
+    @Transactional(readOnly = true)
     public Prefix getById(int id) {
-        Session session = getFactory().openSession();
-        try {
-            return session.get(Prefix.class, id);
-        } finally {
-            session.close();
-        }
+        return sessionFactory.getCurrentSession().get(Prefix.class, id);
     }
 
+    @Transactional
     public void delete(int id) {
-        Session session = getFactory().openSession();
-        Transaction tx = null;
-        try {
-            tx = session.beginTransaction();
-            Prefix p = session.get(Prefix.class, id);
-            if (p != null) {
-                session.delete(p);
-            }
-            tx.commit();
-        } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            throw new RuntimeException("Failed to delete: " + e.getMessage(), e);
-        } finally {
-            session.close();
+        Prefix p = getById(id);
+        if (p != null) {
+            sessionFactory.getCurrentSession().delete(p);
         }
     }
 
+    @Transactional
     public void update(Prefix prefix) {
-        Session session = getFactory().openSession();
-        Transaction tx = null;
-        try {
-            tx = session.beginTransaction();
-            session.update(prefix);
-            tx.commit();
-        } catch (Exception e) {
-            if (tx != null) tx.rollback();
-            throw new RuntimeException("Failed to update: " + e.getMessage(), e);
-        } finally {
-            session.close();
-        }
+        sessionFactory.getCurrentSession().update(prefix);
     }
 }
+

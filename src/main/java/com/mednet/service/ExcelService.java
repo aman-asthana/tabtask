@@ -6,6 +6,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.io.InputStream;
 import java.util.List;
 
 @Service
+@Transactional
 public class ExcelService {
 
     private final PrefixDAO dao;
@@ -20,10 +22,6 @@ public class ExcelService {
     @Autowired
     public ExcelService(PrefixDAO dao) {
         this.dao = dao;
-    }
-
-    public ExcelService() {
-        this.dao = new PrefixDAO();
     }
 
     public void exportExcel(HttpServletResponse response, boolean isTemplate) throws IOException {
@@ -48,8 +46,14 @@ public class ExcelService {
             }
         }
 
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=prefix.xlsx");
+        response.setContentType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+        response.setHeader(
+                "Content-Disposition",
+                "attachment; filename=prefix.xlsx"
+        );
+
         workbook.write(response.getOutputStream());
         workbook.close();
     }
@@ -75,4 +79,3 @@ public class ExcelService {
         return count + " records uploaded successfully";
     }
 }
-

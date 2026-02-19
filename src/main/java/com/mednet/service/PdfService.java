@@ -22,6 +22,9 @@ public class PdfService {
     private final ObjectMapper objectMapper;
 
     private static final String PUPPETEER_URL = "http://localhost:3000/pdf";
+    private static final String NODE_SERVER_PATH = "D:/Oakland 7 tab/tabtask/puppeteer";
+
+    private Process nodeProcess;
 
     @Autowired
     public PdfService(PrefixDAO dao, ObjectMapper objectMapper) {
@@ -30,6 +33,9 @@ public class PdfService {
     }
 
     public void exportPdf(HttpServletResponse response) throws IOException {
+
+        // Start Node server if not running
+        startNodeServer();
 
         response.setContentType("application/pdf");
         response.setHeader(
@@ -49,7 +55,57 @@ public class PdfService {
         }
     }
 
+    // Start Node server using ProcessBuilder
+    private void startNodeServer() {
+        try {
+            // Check if server is already running
+            if (isServerRunning()) {
+                System.out.println("✅ Node server already running");
+                return;
+            }
+
+            System.out.println("🚀 Starting Node server...");
+
+            ProcessBuilder pb = new ProcessBuilder("node", "server.js");
+            pb.directory(new File(NODE_SERVER_PATH));
+            pb.redirectErrorStream(true);
+
+            nodeProcess = pb.start();
+
+            // Wait for server to start (max 5 seconds)
+            for (int i = 0; i < 10; i++) {
+                Thread.sleep(500);
+                if (isServerRunning()) {
+                    System.out.println("✅ Node server started successfully");
+                    return;
+                }
+            }
+
+            System.out.println("⚠️ Node server may not have started properly");
+
+        } catch (Exception e) {
+            System.out.println("❌ Failed to start Node server: " + e.getMessage());
+        }
+    }
+
+    // Check if Node server is running
+    private boolean isServerRunning() {
+        try {
+            URL url = new URL("http://localhost:3000");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(1000);
+            conn.setReadTimeout(1000);
+            conn.setRequestMethod("GET");
+            int responseCode = conn.getResponseCode();
+            conn.disconnect();
+            return responseCode == 200;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private byte[] callPuppeteerServer(String jsonData) throws IOException {
+        // ...existing code...
         URL url = new URL(PUPPETEER_URL);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 
